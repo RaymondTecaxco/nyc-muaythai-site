@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# The Kru: NYC Muay Thai Companion App (Frontend)
 
-## Getting Started
+## Overview
+This repository contains the frontend web application for "The Kru," an automated NYC combat sports aggregator. While the backend ETL pipeline, (https://github.com/RaymondTecaxco/muaythai-aggregator), handles the heavy lifting of extracting and standardizing disparate fight data, this Next.js site serves as the live, user-facing directory.
 
-First, run the development server:
+## Built With
+*   **Next.js (App Router):** Uses standard JavaScript and server-side rendering to generate pages based on real-time database queries.
+*   **Tailwind CSS:** Used for rapid UI development, transforming raw text data into clean, mobile-friendly event cards.
+*   **Supabase Client (`@supabase/supabase-js`):** Connects directly to the cloud PostgreSQL database to fetch the latest scraped events.
+*   **Vercel:** Handles continuous deployment, automatically rebuilding and updating the live site with every push to the main branch.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Technical Hurdles: Taming the Cache
+One of the immediate challenges of building with the Next.js app router is its aggressive default caching. Because the main feed was built as a server component, Next.js initially took a static "snapshot" of the database during the Vercel build. This caused the live site to show stale event data even after the backend scraper had already run and updated the database.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+To solve this, I implemented `export const dynamic = 'force-dynamic'` to explicitly bypass the cache. This forces the server to fetch fresh Supabase rows on every single page load, ensuring the community always sees the most up-to-date fight calendar.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Future Roadmap (Version 2.0)
+This site is currently in its Phase 1 prototype state, serving primarily as a unified event feed. Future features currently in my Agile backlog include:
+*   A secure exhibition matchmaker board requiring role-based coach login authentication.
+*   An interactive NYC gym and combat retail map.
+*   A Twilio-powered SMS alert opt-in portal for seminars hosted by veterans in the sport.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Local Setup
+1. Clone this repository: `git clone https://github.com/RaymondTecaxco/nyc-muaythai-site.git`
+2. Install dependencies: `npm install`
+3. Create a `.env.local` file at the root with your Supabase credentials:
+   NEXT_PUBLIC_SUPABASE_URL=your_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+4. Run the development server: `npm run dev`
+5. Open http://localhost:3000 in your browser.

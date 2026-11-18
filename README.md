@@ -28,3 +28,23 @@ This site is currently in its Phase 1 prototype state, serving primarily as a un
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
 4. Run the development server: `npm run dev`
 5. Open http://localhost:3000 in your browser.
+
+## Database Migrations
+Every change to the matchmaker's database structure lives in `supabase/migrations/` as a SQL file, so the schema is versioned in Git alongside the code. Files are named with a timestamp (for example `20261118170137_create_updated_at_helper.sql`) and are applied in that order. Never edit a migration that has already been applied; write a new one instead.
+
+The Supabase CLI is installed as a dev dependency, so no global install is needed.
+
+**One-time setup (per computer)**
+1. Log in to Supabase: `npx supabase login`
+2. Link this folder to the project (find the project ref in your Supabase dashboard URL): `npx supabase link --project-ref your_project_ref`
+   Linking only records which project to use. No database password is needed: the CLI uses the access token from `supabase login` to create a temporary login role for each command. You can revoke that token anytime in the Supabase dashboard under Account → Access Tokens.
+
+**Everyday workflow**
+1. Create a new, empty migration: `npm run db:new -- describe_the_change`
+2. Write the SQL in the new file under `supabase/migrations/`.
+3. Check which migrations the remote database has already applied: `npm run db:status`
+4. Apply pending migrations to Supabase: `npm run db:push`
+
+Both `db:status` and `db:push` pass `--remote`, because the Supabase CLI targets a local Docker database by default. This project uses the hosted Supabase database only.
+
+**Note:** the `events` table and `upcoming_events` view are created by the [aggregator repo](https://github.com/RaymondTecaxco/muaythai-aggregator) (`sql/upcoming_events_view.sql`), not by these migrations.

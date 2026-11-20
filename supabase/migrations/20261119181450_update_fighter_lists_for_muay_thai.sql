@@ -1,28 +1,15 @@
--- Migration: update_fighter_lists_for_muay_thai
--- Jira: KAN-44 (Fighter profiles and records)
---
--- Replaces the placeholder lists from 20261119170704 with the ones local
--- Muay Thai actually uses. That migration is already applied, so it stays
--- as it is; changes go in a new file.
---
---   * bout type (was "experience level"): smoker / amateur
---   * stance: orthodox / southpaw (now required)
---   * fight types on a record: smoker / amateur (pros come later)
---   * record shape: an amateur record is wins / losses / draws. A smoker
---     (exhibition bout) isn't judged, so a smoker record is just how many
---     smoker bouts the fighter has had ("previous experience").
---
--- If any existing row breaks a new rule (for example a stance of 'switch'),
--- the whole migration fails and nothing changes, because Supabase runs each
--- migration file inside one transaction.
+-- Swap the placeholder lists from 20261119170704 for the ones local Muay
+-- Thai actually uses (KAN-44):
+--   bout type (was experience_level): smoker / amateur
+--   stance: orthodox / southpaw, now required
+--   record fight types: smoker / amateur (pro comes later)
+-- Amateur records keep W/L/D. Smokers aren't judged, so a smoker record is
+-- just a bout count.
 
 
--- ---------------------------------------------------------------------------
--- 1. fighter: bout type and stance
--- ---------------------------------------------------------------------------
+-- fighter
 
--- Renaming keeps the column's data, its NOT NULL and its position. The old
--- CHECK keeps its old name, so it is dropped by that name.
+-- the old check constraint keeps its old name after the rename
 alter table public.fighter
   rename column experience_level to bout_type;
 
@@ -41,19 +28,15 @@ alter table public.fighter
   alter column stance set not null;
 
 
--- ---------------------------------------------------------------------------
--- 2. fighter_record: smoker / amateur, each with its own shape
--- ---------------------------------------------------------------------------
+-- fighter_record
 
 alter table public.fighter_record
   drop constraint fighter_record_fight_type_check,
   add constraint fighter_record_fight_type_check
     check (fight_type in ('smoker', 'amateur'));
 
--- Smoker rows leave wins / losses / draws empty, so these columns can now be
--- null, and the old default of 0 goes (a 0 would put a "record" on a smoker
--- row). The existing "no negative counts" checks still apply: a CHECK passes
--- when the value is null, so they only bite when a number is given.
+-- W/L/D become nullable with no default, since smoker rows leave them empty.
+-- The existing >= 0 checks still apply when a number is given.
 alter table public.fighter_record
   alter column wins   drop not null,
   alter column wins   drop default,
@@ -67,10 +50,7 @@ alter table public.fighter_record
 comment on column public.fighter_record.smoker_bouts is
   'Smoker rows only: how many smoker (exhibition) bouts the fighter has had. Smokers are not judged, so there is no W/L/D.';
 
--- Each row must have exactly the fields for its fight type:
---   amateur -> wins, losses and draws filled in; smoker_bouts empty
---   smoker  -> smoker_bouts filled in; wins, losses and draws empty
--- "num_nonnulls" counts how many of its arguments are not null.
+-- amateur rows: W/L/D only. smoker rows: smoker_bouts only.
 alter table public.fighter_record
   add constraint fighter_record_matches_fight_type check (
     (fight_type = 'amateur'
